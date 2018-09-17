@@ -1,9 +1,3 @@
-# stb_fft
- stb_fft : a single-file fast fourier transform library (suitable for power of 2 and non-power of 2)
-
-#example
-
-```C
 #ifndef STB_FFT_IMPLEMENTAION
 #define STB_FFT_IMPLEMENTAION
 #endif
@@ -49,7 +43,7 @@ void fftResample(float *input, float *output, int input_size, int output_size) {
 int main() {
     printf("a single-file fast fourier transform library.\n");
     printf("blog: http://cpuimage.cnblogs.com/\n");
-    const int inSize = 4;
+    const int inSize = 65536;
     const int outSize = 8;
     float input[inSize];
     float output[outSize];
@@ -66,5 +60,3 @@ int main() {
     printf("\npress any key to exit. \n");
     getchar();
 }
-
-```
