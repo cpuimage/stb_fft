@@ -1,5 +1,5 @@
 # stb_fft
- stb_fft : a single-file fast fourier transform library (suitable for power of 2 and non-power of 2)
+a single-file fast fourier transform library (suitable for power of 2 and non-power of 2)
 
 ## example
 
