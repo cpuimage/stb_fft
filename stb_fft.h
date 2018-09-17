@@ -174,9 +174,9 @@ int stb_make_twiddles_sequential(int n, cmplx *twiddles, stb_fft_stages *stages)
         }
     }
     if (twiddles) {
-        int sign = 1;
+        int w = 1;
         for (int s = 0; s < stages->count; s++) {
-            double w_pi = STB_TWOPI * sign / n;
+            double w_pi = STB_TWOPI * w / n;
             const int r = stages->radix[s];
             const int count = stages->remainder[s];
             int offset = stages->offsets[s];
@@ -188,7 +188,7 @@ int stb_make_twiddles_sequential(int n, cmplx *twiddles, stb_fft_stages *stages)
                     }
                 }
             }
-            sign *= r;
+            w *= r;
         }
     }
     return size;
@@ -348,16 +348,16 @@ void stb_general_dit(cmplx *twiddles, cmplx *out, int count,
             }
             idx = butterfly;
             for (int r = 0; r < radix; ++r) {
-                int twiddles_len = 0;
+                int tw_idx = 0;
                 out[idx] = *scratch;
                 for (int cr = 1; cr < radix; ++cr) {
-                    twiddles_len += cur_sign * idx;
-                    if (twiddles_len >= N)
-                        twiddles_len -= N;
-                    out[idx].real += twiddles[twiddles_len].real * scratch[cr].real
-                                     - twiddles[twiddles_len].imag * scratch[cr].imag;
-                    out[idx].imag += twiddles[twiddles_len].real * scratch[cr].imag
-                                     + scratch[cr].real * twiddles[twiddles_len].imag;
+                    tw_idx += cur_sign * idx;
+                    if (tw_idx >= N)
+                        tw_idx -= N;
+                    out[idx].real += twiddles[tw_idx].real * scratch[cr].real
+                                     - twiddles[tw_idx].imag * scratch[cr].imag;
+                    out[idx].imag += twiddles[tw_idx].real * scratch[cr].imag
+                                     + scratch[cr].real * twiddles[tw_idx].imag;
                 }
                 idx += count;
             }
@@ -371,16 +371,16 @@ void stb_general_dit(cmplx *twiddles, cmplx *out, int count,
             }
             idx = butterfly;
             for (int r = 0; r < radix; ++r) {
-                int twiddles_len = 0;
+                int tw_idx = 0;
                 out[idx] = *scratch;
                 for (int cr = 1; cr < radix; ++cr) {
-                    twiddles_len += cur_sign * idx;
-                    if (twiddles_len >= N)
-                        twiddles_len -= N;
-                    out[idx].real += twiddles[twiddles_len].real * scratch[cr].real
-                                     + twiddles[twiddles_len].imag * scratch[cr].imag;
-                    out[idx].imag += twiddles[twiddles_len].real * scratch[cr].imag
-                                     - scratch[cr].real * twiddles[twiddles_len].imag;
+                    tw_idx += cur_sign * idx;
+                    if (tw_idx >= N)
+                        tw_idx -= N;
+                    out[idx].real += twiddles[tw_idx].real * scratch[cr].real
+                                     + twiddles[tw_idx].imag * scratch[cr].imag;
+                    out[idx].imag += twiddles[tw_idx].real * scratch[cr].imag
+                                     - scratch[cr].real * twiddles[tw_idx].imag;
                 }
                 idx += count;
             }
