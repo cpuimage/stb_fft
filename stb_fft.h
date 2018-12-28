@@ -1,5 +1,5 @@
 // fast fourier transform library (suitable for power of 2 and non-power of 2) Public domain. See "unlicense" statement at the end of this file.
-// stb_fft - v0.1 - 2018-09-17
+// stb_fft - v0.11 - 2018-12-28
 //
 // ZhiHan Gao - 200759103@qq.com
 // USAGE
@@ -61,9 +61,9 @@ typedef struct {
     cmplx *twiddles;
 } stb_fft_real_plan;
 
-int stb_fft_plan_dft_1d(int N, stb_fft_plan *plan);
+stb_fft_plan *stb_fft_plan_dft_1d(int N);
 
-int stb_fft_real_plan_dft_1d(int N, stb_fft_real_plan *plan);
+stb_fft_real_plan *stb_fft_real_plan_dft_1d(int N);
 
 void stb_fft_r2c_exec(stb_fft_real_plan *plan, const stb_real_t *in, cmplx *out);
 
@@ -89,56 +89,64 @@ void STB_IFFT_C2R(cmplx *input, stb_real_t *output, int n);
 
 #ifdef STB_FFT_IMPLEMENTAION
 
+#ifndef STB_KP5
+#define STB_KP5 ((stb_real_t)0.5)
+#endif
+
+#ifndef STB_KP25
+#define STB_KP25  ((stb_real_t)0.25)
+#endif
+
 #ifndef STB_KP951056516
-#define STB_KP951056516 0.951056516295153572116439333379382143405698634
+#define STB_KP951056516 ((stb_real_t)0.951056516295153572116439333379382143405698634)
 #endif
 
 #ifndef STB_KP587785252
-#define STB_KP587785252 0.587785252292473129168705954639072768597652438
+#define STB_KP587785252 ((stb_real_t)0.587785252292473129168705954639072768597652438)
 #endif
 
 #ifndef STB_KP559016994
-#define STB_KP559016994 0.559016994374947424102293417182819058860154590
+#define STB_KP559016994 ((stb_real_t)0.559016994374947424102293417182819058860154590)
 #endif
 
 #ifndef STB_KP866025403
-#define STB_KP866025403 0.866025403784438646763723170752936183471402627
+#define STB_KP866025403 ((stb_real_t)0.866025403784438646763723170752936183471402627)
 #endif
 
 #ifndef STB_KP900968867
-#define STB_KP900968867 0.900968867902419126236102319507445051165919162
+#define STB_KP900968867 ((stb_real_t)0.900968867902419126236102319507445051165919162)
 #endif
 
 #ifndef STB_KP222520933
-#define STB_KP222520933 0.222520933956314404288902564496794759466355569
+#define STB_KP222520933 ((stb_real_t)0.222520933956314404288902564496794759466355569)
 #endif
 
 #ifndef STB_KP623489801
-#define STB_KP623489801 0.623489801858733530525004884004239810632274731
+#define STB_KP623489801 ((stb_real_t)0.623489801858733530525004884004239810632274731)
 #endif
 
 #ifndef STB_KP781831482
-#define STB_KP781831482 0.781831482468029808708444526674057750232334519
+#define STB_KP781831482 ((stb_real_t)0.781831482468029808708444526674057750232334519)
 #endif
 
 #ifndef STB_KP974927912
-#define STB_KP974927912 0.974927912181823607018131682993931217232785801
+#define STB_KP974927912 ((stb_real_t)0.974927912181823607018131682993931217232785801)
 #endif
 
 #ifndef STB_KP433883739
-#define STB_KP433883739 0.433883739117558120475768332848358754609990728
+#define STB_KP433883739 ((stb_real_t)0.433883739117558120475768332848358754609990728)
 #endif
 
 #ifndef STB_KP707106781
-#define STB_KP707106781 0.707106781186547524400844362104849039284835938
+#define STB_KP707106781 ((stb_real_t)0.707106781186547524400844362104849039284835938)
 #endif
 
 #ifndef STB_TWOPI
-#define STB_TWOPI 6.283185307179586476925286766559005768394338798750211641949889
+#define STB_TWOPI ((stb_real_t)6.283185307179586476925286766559005768394338798750211641949889)
 #endif
 
 #ifndef STB_PI
-#define STB_PI    3.141592653589793238462643383279502884197169399375105820974944
+#define STB_PI    ((stb_real_t)3.141592653589793238462643383279502884197169399375105820974944)
 #endif
 
 void stbSinCos(double x, stb_real_t *pSin, stb_real_t *pCos) {
@@ -251,7 +259,7 @@ int stb_make_fft_plan(int N, stb_fft_plan *plan) {
             + twiddles_size
             + size_radix + size_remainder + size_offsets + twiddles_ordered_size;
     if (plan) {
-        uint8_t *data = (uint8_t *) (plan);
+        uint8_t *data = (uint8_t * )(plan);
         uint8_t *data_twiddles = data + size_plan;
         uint8_t *data_radix = data_twiddles + twiddles_size;
         uint8_t *data_remainder = data_radix + size_radix;
@@ -273,7 +281,7 @@ int stb_make_fft_plan(int N, stb_fft_plan *plan) {
     return total_size;
 }
 
-int stb_fft_plan_dft_1d(int N, stb_fft_plan *plan) {
+stb_fft_plan *stb_fft_plan_dft_1d(int N) {
     if (N == 0) return 0;
     stb_stage_info info = stb_calculate_stages(N, NULL);
     const int size_plan = sizeof(stb_fft_plan);
@@ -287,8 +295,9 @@ int stb_fft_plan_dft_1d(int N, stb_fft_plan *plan) {
             size_plan
             + twiddles_size
             + size_radix + size_remainder + size_offsets + twiddles_ordered_size;
+    stb_fft_plan *plan = (stb_fft_plan *) calloc(total_size, 1);
     if (plan) {
-        uint8_t *data = (uint8_t *) (plan);
+        uint8_t *data = (uint8_t * )(plan);
         uint8_t *data_twiddles = data + size_plan;
         uint8_t *data_radix = data_twiddles + twiddles_size;
         uint8_t *data_remainder = data_radix + size_radix;
@@ -307,10 +316,10 @@ int stb_fft_plan_dft_1d(int N, stb_fft_plan *plan) {
         stb_calculate_stages(N, plan);
         stb_make_twiddles_sequential(N, plan->twiddles_ordered, &plan->stages);
     }
-    return total_size;
+    return plan;
 }
 
-int stb_fft_real_plan_dft_1d(int N, stb_fft_real_plan *plan) {
+stb_fft_real_plan *stb_fft_real_plan_dft_1d(int N) {
     if (N == 0) return 0;
     if (N & 1) {
         fprintf(stderr, "Real FFT must be even.\n");
@@ -319,9 +328,8 @@ int stb_fft_real_plan_dft_1d(int N, stb_fft_real_plan *plan) {
     N >>= 1;
     int c_plan_size = stb_make_fft_plan(N, NULL);
     int mem_needed = sizeof(stb_fft_real_plan) + c_plan_size + sizeof(cmplx) * (N * 3 / 2);
-    if (plan == NULL) {
-        return mem_needed;
-    } else {
+    stb_fft_real_plan *plan = (stb_fft_real_plan *) calloc(mem_needed, 1);
+    if (plan) {
         plan->half_plan = (stb_fft_plan *) (plan + 1);
         plan->buffer = (cmplx *) (((char *) plan->half_plan) + c_plan_size);
         plan->twiddles = plan->buffer + N;
@@ -330,7 +338,7 @@ int stb_fft_real_plan_dft_1d(int N, stb_fft_real_plan *plan) {
             stbSinCos(-STB_PI * ((double) (i + 1) / N + 0.5), &plan->twiddles[i].imag, &plan->twiddles[i].real);
         }
     }
-    return mem_needed;
+    return plan;
 }
 
 
@@ -433,10 +441,10 @@ void stb_radix_3_dit(const cmplx *tw, cmplx *out, int count) {
     stb_real_t T8 = (T6 - T7) * STB_KP866025403;
     out[0].real = out[0].real + T2 + T3;
     out[0].imag = T10 + T6 + T7;
-    stb_real_t T5 = T1 - 0.5 * (T2 + T3);
+    stb_real_t T5 = T1 - STB_KP5 * (T2 + T3);
     out[2 * count].real = T5 - T8;
     out[count].real = T5 + T8;
-    stb_real_t T12 = T10 - 0.5 * (T6 + T7);
+    stb_real_t T12 = T10 - STB_KP5 * (T6 + T7);
     out[count].imag = T9 + T12;
     out[2 * count].imag = T12 - T9;
     output = out + 1;
@@ -460,9 +468,9 @@ void stb_radix_3_dit(const cmplx *tw, cmplx *out, int count) {
         output[0].real = output[0].real + T12_0;
         output[0].imag = T17 + T18;
         stb_real_t T16 = (T14 - T15) * STB_KP866025403;
-        output[2 * count].real = T1_0 - 0.5 * T12_0 - T16;
-        output[count].real = T1_0 - 0.5 * T12_0 + T16;
-        stb_real_t T20 = T18 - 0.5 * T17;
+        output[2 * count].real = T1_0 - STB_KP5 * T12_0 - T16;
+        output[count].real = T1_0 - STB_KP5 * T12_0 + T16;
+        stb_real_t T20 = T18 - STB_KP5 * T17;
         output[count].imag = (T11_0 - T6_0) * STB_KP866025403 + T20;
         output[2 * count].imag = T20 - (T11_0 - T6_0) * STB_KP866025403;
         ++m;
@@ -549,16 +557,16 @@ void stb_radix_5_dit(const cmplx *tw, cmplx *out, int count) {
     out[0].imag = T24 + T25;
     stb_real_t T18 = STB_KP587785252 * (T15 - T16) + STB_KP951056516 * (T12 - T13);
     stb_real_t T20 = STB_KP951056516 * (T15 - T16) - STB_KP587785252 * (T12 - T13);
-    stb_real_t T11 = T9 + T1 - 0.25 * T8;
-    stb_real_t T19 = T1 - 0.25 * T8 - T9;
+    stb_real_t T11 = T9 + T1 - STB_KP25 * T8;
+    stb_real_t T19 = T1 - STB_KP25 * T8 - T9;
     out[4 * count].real = T11 - T18;
     out[3 * count].real = T19 + T20;
     out[count].real = T11 + T18;
     out[2 * count].real = T19 - T20;
     stb_real_t T30 = STB_KP587785252 * (T5 - T6) + STB_KP951056516 * (T2 - T3);
     stb_real_t T31 = STB_KP951056516 * (T5 - T6) - STB_KP587785252 * (T2 - T3);
-    stb_real_t T27 = T23 + T24 - 0.25 * T25;
-    stb_real_t T32 = T24 - 0.25 * T25 - T23;
+    stb_real_t T27 = T23 + T24 - STB_KP25 * T25;
+    stb_real_t T32 = T24 - STB_KP25 * T25 - T23;
     out[count].imag = T27 - T30;
     out[3 * count].imag = T32 - T31;
     out[4 * count].imag = T30 + T27;
@@ -601,16 +609,16 @@ void stb_radix_5_dit(const cmplx *tw, cmplx *out, int count) {
         output[0].imag = T39 + T40;
         stb_real_t T34 = STB_KP587785252 * T33 + STB_KP951056516 * T30_0;
         stb_real_t T36 = STB_KP951056516 * T33 - STB_KP587785252 * T30_0;
-        stb_real_t T27_0 = (T12_0 - T23_0) * STB_KP559016994 + T1_0 - 0.25 * T24_0;
-        stb_real_t T35 = T1_0 - 0.25 * T24_0 - (T12_0 - T23_0) * STB_KP559016994;
+        stb_real_t T27_0 = (T12_0 - T23_0) * STB_KP559016994 + T1_0 - STB_KP25 * T24_0;
+        stb_real_t T35 = T1_0 - STB_KP25 * T24_0 - (T12_0 - T23_0) * STB_KP559016994;
         output[4 * count].real = T27_0 - T34;
         output[3 * count].real = T35 + T36;
         output[count].real = T27_0 + T34;
         output[2 * count].real = T35 - T36;
         stb_real_t T46 = STB_KP587785252 * T45 + STB_KP951056516 * T44;
         stb_real_t T47 = STB_KP951056516 * T45 - STB_KP587785252 * T44;
-        stb_real_t T43 = (T37 - T38) * STB_KP559016994 + T40 - 0.25 * T39;
-        stb_real_t T48 = T40 - 0.25 * T39 - (T37 - T38) * STB_KP559016994;
+        stb_real_t T43 = (T37 - T38) * STB_KP559016994 + T40 - STB_KP25 * T39;
+        stb_real_t T48 = T40 - STB_KP25 * T39 - (T37 - T38) * STB_KP559016994;
         output[count].imag = T43 - T46;
         output[3 * count].imag = T48 - T47;
         output[4 * count].imag = T46 + T43;
@@ -646,16 +654,16 @@ void stb_radix_6_dit(const cmplx *tw, cmplx *out, int count) {
     out[0].real = T11 + T14;
     out[0].imag = T24 + T25 + T34;
     stb_real_t T22 = (T16 - T17 - (T19 - T20)) * STB_KP866025403;
-    out[5 * count].real = T3 - 0.5 * T10 - T22;
-    out[count].real = T3 - 0.5 * T10 + T22;
+    out[5 * count].real = T3 - STB_KP5 * T10 - T22;
+    out[count].real = T3 - STB_KP5 * T10 + T22;
     stb_real_t T23 = (T7 - T8 - (T4 - T5)) * STB_KP866025403;
-    stb_real_t T28 = T24 - T25 - 0.5 * T27;
+    stb_real_t T28 = T24 - T25 - STB_KP5 * T27;
     out[count].imag = T23 + T28;
     out[5 * count].imag = T28 - T23;
     stb_real_t T32 = (T16 + T17 - (T19 + T20)) * STB_KP866025403;
-    out[2 * count].real = T11 - 0.5 * T14 - T32;
-    out[4 * count].real = T11 - 0.5 * T14 + T32;
-    stb_real_t T35 = T24 + T25 - 0.5 * T34;
+    out[2 * count].real = T11 - STB_KP5 * T14 - T32;
+    out[4 * count].real = T11 - STB_KP5 * T14 + T32;
+    stb_real_t T35 = T24 + T25 - STB_KP5 * T34;
     stb_real_t T36 = (T7 + T8 - (T4 + T5)) * STB_KP866025403;
     out[2 * count].imag = T35 - T36;
     out[4 * count].imag = T36 + T35;
@@ -698,23 +706,23 @@ void stb_radix_6_dit(const cmplx *tw, cmplx *out, int count) {
         stb_real_t T32_0 = T10_0 * T11_0 + T8_0 * T9_0 + T17_0;
         stb_real_t T42 = (T8_0 * T11_0 - T10_0 * T9_0 - T37 - T41) * STB_KP866025403;
         stb_real_t T30_0 = T10_0 * T11_0 + T8_0 * T9_0 - T17_0 + T29_0;
-        stb_real_t T35_0 = output[0].real - T6_0 - 0.5 * T30_0;
+        stb_real_t T35_0 = output[0].real - T6_0 - STB_KP5 * T30_0;
         output[3 * count].real = output[0].real - T6_0 + T30_0;
         output[count].real = T35_0 + T42;
         output[5 * count].real = T35_0 - T42;
         stb_real_t T53 = (T29_0 - (T10_0 * T11_0 + T8_0 * T9_0 - T17_0)) * STB_KP866025403;
         stb_real_t T55 = T8_0 * T11_0 - T10_0 * T9_0 - T37 + T41;
-        stb_real_t T56 = T54 - 0.5 * T55;
+        stb_real_t T56 = T54 - STB_KP5 * T55;
         output[count].imag = T53 + T56;
         output[3 * count].imag = T55 + T54;
         output[5 * count].imag = T56 - T53;
         stb_real_t T46 = (T44 - T45) * STB_KP866025403;
-        stb_real_t T43 = T31_0 - 0.5 * (T32_0 + T33_0);
+        stb_real_t T43 = T31_0 - STB_KP5 * (T32_0 + T33_0);
         output[0].real = T31_0 + T32_0 + T33_0;
         output[4 * count].real = T43 + T46;
         output[2 * count].real = T43 - T46;
         stb_real_t T52 = (T33_0 - T32_0) * STB_KP866025403;
-        stb_real_t T51 = T50 - 0.5 * (T44 + T45);
+        stb_real_t T51 = T50 - STB_KP5 * (T44 + T45);
         output[0].imag = T44 + T45 + T50;
         output[4 * count].imag = T52 + T51;
         output[2 * count].imag = T51 - T52;
@@ -1084,10 +1092,10 @@ void stb_radix_3_idit(const cmplx *tw, cmplx *out, int count) {
     stb_real_t T12 = (T8 - T7) * STB_KP866025403;
     out[0].real = out[0].real + T2 + T3;
     out[0].imag = T6 + T7 + T8;
-    stb_real_t T10 = T6 - 0.5 * (T7 + T8);
+    stb_real_t T10 = T6 - STB_KP5 * (T7 + T8);
     out[count].imag = T5 + T10;
     out[2 * count].imag = T10 - T5;
-    stb_real_t T11 = T1 - 0.5 * (T2 + T3);
+    stb_real_t T11 = T1 - STB_KP5 * (T2 + T3);
     out[2 * count].real = T11 - T12;
     out[count].real = T11 + T12;
     output = out + 1;
@@ -1111,9 +1119,9 @@ void stb_radix_3_idit(const cmplx *tw, cmplx *out, int count) {
         output[0].real = output[0].real + T12_0;
         output[0].imag = T17 + T18;
         stb_real_t T16 = (T14 - T15) * STB_KP866025403;
-        output[2 * count].real = T1_0 - 0.5 * T12_0 - T16;
-        output[count].real = T1_0 - 0.5 * T12_0 + T16;
-        stb_real_t T20 = T18 - 0.5 * T17;
+        output[2 * count].real = T1_0 - STB_KP5 * T12_0 - T16;
+        output[count].real = T1_0 - STB_KP5 * T12_0 + T16;
+        stb_real_t T20 = T18 - STB_KP5 * T17;
         output[count].imag = (T6_0 - T11_0) * STB_KP866025403 + T20;
         output[2 * count].imag = T20 - (T6_0 - T11_0) * STB_KP866025403;
         ++m;
@@ -1200,14 +1208,14 @@ void stb_radix_5_idit(const cmplx *tw, cmplx *out, int count) {
     out[0].imag = T27 + T28;
     stb_real_t T18 = STB_KP587785252 * (T12 - T13) - STB_KP951056516 * (T15 - T16);
     stb_real_t T20 = STB_KP587785252 * (T15 - T16) + STB_KP951056516 * (T12 - T13);
-    stb_real_t T19 = T10 + T1 - 0.25 * T8;
-    out[2 * count].real = T1 - 0.25 * T8 - T10 - T18;
+    stb_real_t T19 = T10 + T1 - STB_KP25 * T8;
+    out[2 * count].real = T1 - STB_KP25 * T8 - T10 - T18;
     out[4 * count].real = T19 + T20;
-    out[3 * count].real = T1 - 0.25 * T8 - T10 + T18;
+    out[3 * count].real = T1 - STB_KP25 * T8 - T10 + T18;
     out[count].real = T19 - T20;
     stb_real_t T31 = STB_KP587785252 * (T2 - T3) - STB_KP951056516 * (T5 - T6);
-    stb_real_t T30 = T26 + T27 - 0.25 * T28;
-    stb_real_t T32 = T27 - 0.25 * T28 - T26;
+    stb_real_t T30 = T26 + T27 - STB_KP25 * T28;
+    stb_real_t T32 = T27 - STB_KP25 * T28 - T26;
     out[count].imag = STB_KP587785252 * (T5 - T6) + STB_KP951056516 * (T2 - T3) + T30;
     out[3 * count].imag = T32 - T31;
     out[4 * count].imag = T30 - (STB_KP587785252 * (T5 - T6) + STB_KP951056516 * (T2 - T3));
@@ -1250,15 +1258,15 @@ void stb_radix_5_idit(const cmplx *tw, cmplx *out, int count) {
         output[0].imag = T39 + T40;
         stb_real_t T34 = STB_KP587785252 * T30_0 - STB_KP951056516 * T33;
         stb_real_t T36 = STB_KP587785252 * T33 + STB_KP951056516 * T30_0;
-        stb_real_t T27_0 = T1_0 - 0.25 * T24_0 - (T12_0 - T23_0) * STB_KP559016994;
-        stb_real_t T35 = (T12_0 - T23_0) * STB_KP559016994 + T1_0 - 0.25 * T24_0;
+        stb_real_t T27_0 = T1_0 - STB_KP25 * T24_0 - (T12_0 - T23_0) * STB_KP559016994;
+        stb_real_t T35 = (T12_0 - T23_0) * STB_KP559016994 + T1_0 - STB_KP25 * T24_0;
         output[2 * count].real = T27_0 - T34;
         output[4 * count].real = T35 + T36;
         output[3 * count].real = T27_0 + T34;
         output[count].real = T35 - T36;
         stb_real_t T47 = STB_KP587785252 * T41 - STB_KP951056516 * T42;
-        stb_real_t T46 = (T37 - T38) * STB_KP559016994 + T40 - 0.25 * T39;
-        stb_real_t T48 = T40 - 0.25 * T39 - (T37 - T38) * STB_KP559016994;
+        stb_real_t T46 = (T37 - T38) * STB_KP559016994 + T40 - STB_KP25 * T39;
+        stb_real_t T48 = T40 - STB_KP25 * T39 - (T37 - T38) * STB_KP559016994;
         output[count].imag = STB_KP587785252 * T42 + STB_KP951056516 * T41 + T46;
         output[3 * count].imag = T48 - T47;
         output[4 * count].imag = T46 - (STB_KP587785252 * T42 + STB_KP951056516 * T41);
@@ -1294,19 +1302,19 @@ void stb_radix_6_idit(const cmplx *tw, cmplx *out, int count) {
     out[0].real = T11 + T14;
     out[0].imag = T24 + T25 + T32;
     stb_real_t T22 = (T16 - T17 - (T19 - T20)) * STB_KP866025403;
-    out[5 * count].real = T3 - 0.5 * T10 - T22;
-    out[count].real = T3 - 0.5 * T10 + T22;
+    out[5 * count].real = T3 - STB_KP5 * T10 - T22;
+    out[count].real = T3 - STB_KP5 * T10 + T22;
     stb_real_t T23 = (T4 - T5 - (T7 - T8)) * STB_KP866025403;
-    stb_real_t T28 = T24 - T25 - 0.5 * T27;
+    stb_real_t T28 = T24 - T25 - STB_KP5 * T27;
     out[count].imag = T23 + T28;
     out[5 * count].imag = T28 - T23;
-    stb_real_t T33 = T24 + T25 - 0.5 * T32;
+    stb_real_t T33 = T24 + T25 - STB_KP5 * T32;
     stb_real_t T34 = (T4 + T5 - (T7 + T8)) * STB_KP866025403;
     out[2 * count].imag = T33 - T34;
     out[4 * count].imag = T34 + T33;
     stb_real_t T36 = (T16 + T17 - (T19 + T20)) * STB_KP866025403;
-    out[2 * count].real = T11 - 0.5 * T14 - T36;
-    out[4 * count].real = T11 - 0.5 * T14 + T36;
+    out[2 * count].real = T11 - STB_KP5 * T14 - T36;
+    out[4 * count].real = T11 - STB_KP5 * T14 + T36;
     output = out + 1;
     m = 1;
     while (m < count) {
@@ -1346,23 +1354,23 @@ void stb_radix_6_idit(const cmplx *tw, cmplx *out, int count) {
         stb_real_t T41 = T8_0 * T11_0 + T10_0 * T9_0 - T40;
         stb_real_t T42 = (T19_0 * T22_0 + T21_0 * T20_0 - T37 - T41) * STB_KP866025403;
         stb_real_t T30_0 = T8_0 * T9_0 - T10_0 * T11_0 - T17_0 + T29_0;
-        stb_real_t T35_0 = output[0].real - T6_0 - 0.5 * T30_0;
+        stb_real_t T35_0 = output[0].real - T6_0 - STB_KP5 * T30_0;
         output[3 * count].real = output[0].real - T6_0 + T30_0;
         output[count].real = T35_0 + T42;
         output[5 * count].real = T35_0 - T42;
         stb_real_t T53 = (T8_0 * T9_0 - T10_0 * T11_0 - T17_0 - T29_0) * STB_KP866025403;
         stb_real_t T55 = T41 + T19_0 * T22_0 + T21_0 * T20_0 - T37;
-        stb_real_t T56 = T54 - 0.5 * T55;
+        stb_real_t T56 = T54 - STB_KP5 * T55;
         output[count].imag = T53 + T56;
         output[3 * count].imag = T55 + T54;
         output[5 * count].imag = T56 - T53;
         stb_real_t T46 = (T44 - T45) * STB_KP866025403;
-        stb_real_t T43 = T31_0 - 0.5 * (T32_0 + T33_0);
+        stb_real_t T43 = T31_0 - STB_KP5 * (T32_0 + T33_0);
         output[0].real = T31_0 + T32_0 + T33_0;
         output[4 * count].real = T43 + T46;
         output[2 * count].real = T43 - T46;
         stb_real_t T52 = (T32_0 - T33_0) * STB_KP866025403;
-        stb_real_t T51 = T50 - 0.5 * (T45 + T44);
+        stb_real_t T51 = T50 - STB_KP5 * (T45 + T44);
         output[0].imag = T45 + T44 + T50;
         output[4 * count].imag = T52 + T51;
         output[2 * count].imag = T51 - T52;
@@ -1820,10 +1828,10 @@ void stb_fft_r2c_exec(stb_fft_real_plan *plan, const stb_real_t *input, cmplx *o
                        (plan->twiddles[c - 1].imag * (plan->buffer[c].imag - t.imag));
         stb_real_t i = (plan->twiddles[c - 1].real * (plan->buffer[c].imag - t.imag)) +
                        ((plan->buffer[c].real - t.real) * plan->twiddles[c - 1].imag);
-        output[c].real = (r + (t.real + plan->buffer[c].real)) * 0.5;
-        output[c].imag = (i + (t.imag + plan->buffer[c].imag)) * 0.5;
-        output[n - c].real = ((t.real + plan->buffer[c].real) - r) * 0.5;
-        output[n - c].imag = (i - (t.imag + plan->buffer[c].imag)) * 0.5;
+        output[c].real = (r + (t.real + plan->buffer[c].real)) * STB_KP5;
+        output[c].imag = (i + (t.imag + plan->buffer[c].imag)) * STB_KP5;
+        output[n - c].real = ((t.real + plan->buffer[c].real) - r) * STB_KP5;
+        output[n - c].imag = (i - (t.imag + plan->buffer[c].imag)) * STB_KP5;
     }
 }
 
@@ -1851,12 +1859,8 @@ void STB_FFT(cmplx *input, cmplx *output, int n) {
         output[0] = input[0];
         return;
     }
-    int plan_size = stb_fft_plan_dft_1d(n, NULL);
-    if (plan_size <= 0)
-        return;
-    stb_fft_plan *plan = (stb_fft_plan *) calloc(plan_size, 1);
+    stb_fft_plan *plan = stb_fft_plan_dft_1d(n);
     if (plan != NULL) {
-        stb_fft_plan_dft_1d(n, plan);
         stb_fft_exec(plan, input, output);
         free(plan);
     }
@@ -1867,12 +1871,8 @@ void STB_IFFT(cmplx *input, cmplx *output, int n) {
         output[0] = input[0];
         return;
     }
-    int plan_size = stb_fft_plan_dft_1d(n, NULL);
-    if (plan_size <= 0)
-        return;
-    stb_fft_plan *plan = (stb_fft_plan *) calloc(plan_size, 1);
+    stb_fft_plan *plan = stb_fft_plan_dft_1d(n);
     if (plan != NULL) {
-        stb_fft_plan_dft_1d(n, plan);
         stb_ifft_exec(plan, input, output);
         free(plan);
     }
@@ -1883,12 +1883,8 @@ void STB_FFT_R2C(stb_real_t *input, cmplx *output, int n) {
         output[0].real = input[0];
         return;
     }
-    int plan_size = stb_fft_real_plan_dft_1d(n, NULL);
-    if (plan_size <= 0)
-        return;
-    stb_fft_real_plan *stb_fft_plan = (stb_fft_real_plan *) calloc(plan_size, 1);
+    stb_fft_real_plan *stb_fft_plan = stb_fft_real_plan_dft_1d(n);
     if (stb_fft_plan != NULL) {
-        stb_fft_real_plan_dft_1d(n, stb_fft_plan);
         stb_fft_r2c_exec(stb_fft_plan, input, output);
         free(stb_fft_plan);
     }
@@ -1899,12 +1895,8 @@ void STB_IFFT_C2R(cmplx *input, stb_real_t *output, int n) {
         output[0] = input[0].real;
         return;
     }
-    int plan_size = stb_fft_real_plan_dft_1d(n, NULL);
-    if (plan_size <= 0)
-        return;
-    stb_fft_real_plan *stb_fft_plan = (stb_fft_real_plan *) calloc(plan_size, 1);
+    stb_fft_real_plan *stb_fft_plan = stb_fft_real_plan_dft_1d(n);
     if (stb_fft_plan != NULL) {
-        stb_fft_real_plan_dft_1d(n, stb_fft_plan);
         stb_fft_c2r_exec(stb_fft_plan, input, output);
         free(stb_fft_plan);
     }
@@ -1913,7 +1905,7 @@ void STB_IFFT_C2R(cmplx *input, stb_real_t *output, int n) {
 #endif
 
 // REVISION HISTORY
-// v0.1 - 2018-09-17
+// v0.11 - 2018-12-28
 //   - Initial versioned release.
 
 /*
